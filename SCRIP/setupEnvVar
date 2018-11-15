@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------------
+# 
+#  This script sets some environment variables needed for compiling SCRIP
+#
+#  SCRIPEXEDIR = the directory where you want the executable to end up.  A
+#              common value might be . (the current working directory)
+#  SCRIPDIR    = the path to the SCRIP distribution from which you want
+#              to grab source files, etc.  This should be the path to the
+#              top level SCRIP directory, not the individual source,mpi
+#              directories.
+#  SCRIPARCH   = the base name of a file in the build directory where
+#              architecture and location-specific information is defined
+
+
+export SCRIPEXEDIR=./work
+export SCRIPDIR=.
+export SCRIPARCH=linuxintel_serial
