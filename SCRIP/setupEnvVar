@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#  usage: 
+#       . setupEnvVar
+#
 #--------------------------------------------------------------------------------
 # 
 #  This script sets some environment variables needed for compiling SCRIP
@@ -12,8 +15,9 @@
 #              directories.
 #  SCRIPARCH   = the base name of a file in the build directory where
 #              architecture and location-specific information is defined
+#
+#--------------------------------------------------------------------------------
 
-
-export SCRIPEXEDIR=./work
-export SCRIPDIR=.
+export SCRIPEXEDIR=$PWD/work
+export SCRIPDIR=$PWD
 export SCRIPARCH=linuxintel_serial

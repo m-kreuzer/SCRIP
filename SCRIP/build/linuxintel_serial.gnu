@@ -10,9 +10,9 @@
 F77 = ifort
 F90 = ifort
 LD = ifort
-CC = cc
+CC = icc
 Cp = /bin/cp
-Cpp = cpp -P -C 
+Cpp = cpp -P #-C 
 AWK = /usr/bin/gawk
 ABI = 
 COMMDIR = serial
