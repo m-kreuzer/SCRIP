@@ -28,8 +28,16 @@ MPI = no
 #NETCDFLIB = -L/netcdf_library_path
 #NETCDFINC = -I/usr/projects/climate/maltrud/local/include_coyote
 #NETCDFLIB = -L/usr/projects/climate/maltrud/local/lib_coyote
-NETCDFINC = -I/usr/projects/climate/bzhao/netcdf-3.6.1/include
-NETCDFLIB = -L/usr/projects/climate/bzhao/netcdf-3.6.1/lib
+#NETCDFINC = -I/usr/projects/climate/bzhao/netcdf-3.6.1/include
+#NETCDFLIB = -L/usr/projects/climate/bzhao/netcdf-3.6.1/lib
+NETCDFINC = -I/p/system/packages/netcdf-fortran/4.4.4/intel/serial/include
+NETCDFLIB = -L/p/system/packages/netcdf-fortran/4.4.4/intel/serial/lib \
+            -L/p/system/packages/netcdf-c/4.4.1.1/intel/serial/lib
+
+CURLLIB = -L/p/system/packages/curl/7.58.0/lib
+HDF5LIB = -L/p/system/packages/hdf5/1.8.20/intel/serial/lib
+
+
 
 #  Enable trapping and traceback of floating point exceptions, yes/no.
 #  Note - Requires 'setenv TRAP_FPE "ALL=ABORT,TRACE"' for traceback.
@@ -62,7 +70,8 @@ endif
 #
 #----------------------------------------------------------------------------
 
-FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -i-dynamic -convert big_endian 
+#FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -i-dynamic -convert big_endian 
+FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -shared-intel -convert big_endian 
 MODSUF = mod
 
 ifeq ($(TRAP_FPE),yes)
@@ -81,9 +90,14 @@ endif
 #
 #----------------------------------------------------------------------------
  
-LDFLAGS = $(ABI) -mcmodel=medium -i-dynamic -convert big_endian  -fopenmp
+#LDFLAGS = $(ABI) -mcmodel=medium -i-dynamic -convert big_endian  -fopenmp
+LDFLAGS = $(ABI) -mcmodel=medium -shared-intel -convert big_endian  -fopenmp
  
-LIBS = $(NETCDFLIB) -lnetcdf
+#LIBS = $(NETCDFLIB) -lnetcdf
+LIBS =  $(NETCDFLIB) -lnetcdff -lnetcdf \
+        $(HDF5LIB) -lhdf5_fortran -lhdf5hl_fortran \
+        $(CURLLIB) -lcurl\
+
  
 ifeq ($(MPI),yes)
   LIBS := $(LIBS) $(MPI_LD_FLAGS) -lmpi 
