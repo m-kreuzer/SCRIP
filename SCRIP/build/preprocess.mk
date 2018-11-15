@@ -40,7 +40,8 @@ endif
 #
 #----------------------------------------------------------------------------
 
-SRCDIRS = $(SCRIPEXEDIR)/
+#SRCDIRS = $(SCRIPEXEDIR)/
+SRCDIRS = $(PWD)/
 SRCDIRS := $(SRCDIRS) $(SCRIPDIR)/source/
 SRCDIRS := $(SRCDIRS) $(SCRIPDIR)/source/$(COMMDIR)/
 
