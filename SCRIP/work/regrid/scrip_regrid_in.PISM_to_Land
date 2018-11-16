@@ -1,0 +1,14 @@
+&remapInputs
+
+    input_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/input/PICO_thinned.nc'
+    
+    field_name = 'mask'
+
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.PISM_to_Land.nc'
+    interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.PISM_to_Land.destarea.nc'
+    
+    !output_file = 'out_PISM_to_Land_conserv.mask.nc'
+    output_file = 'out_PISM_to_Land_conserv.mask.destarea.nc'
+
+
+/

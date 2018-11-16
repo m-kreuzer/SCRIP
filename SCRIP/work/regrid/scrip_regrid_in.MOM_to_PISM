@@ -1,0 +1,21 @@
+&remapInputs
+
+    input_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/input/mom_example_data_pure.nc'
+
+    field_name = 'temp'
+    
+    interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.MOM_to_PISM.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.MOM_to_PISM.pico_mask2.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_MOM_to_PISM_conserv.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_MOM_to_PISMnm_conserv.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_MOM_to_PISMnm_conserv_destArea.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_MOM_to_PISM_conserv_latlon.nc'
+    
+    output_file = 'out_MOM_to_PISM.conserv.nc'
+    !output_file = 'out_MOM_to_PISM_conserv.pico_mask2.nc'
+    !output_file = 'out_MOM_to_PISM_conserv.SCRIP_weight.nc'
+    !output_file = 'out_MOM_to_PISMnm_conserv.SCRIP_weight.nc'
+    !output_file = 'out_MOM_to_PISMnm_conserv_destArea.SCRIP_weight.nc'
+    !output_file = 'out_MOM_to_PISM_conserv.SCRIP_weight_latlon.nc'
+
+/
