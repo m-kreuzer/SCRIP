@@ -48,6 +48,8 @@
    character (SCRIP_charLength), parameter :: &
       configFileDefault = 'scrip_in'
 
+
+
    interface SCRIP_ConfigRead
       module procedure SCRIP_ConfigReadI4,      &
                        SCRIP_ConfigReadR4,      &
@@ -264,6 +266,12 @@ contains
    character (16), parameter :: &
       rtnName = 'SCRIP_ConfigRead'
 
+   character (10)  :: &
+       read_format           ! format specifier for reading inputString
+
+       ! create format specifier that matches SCRIP character length
+       write(read_format, '(a2,I3,a1)') '(a', SCRIP_CharLength, ')'
+
 !-----------------------------------------------------------------------
 !
 !  check to see if unit is open and rewind unit
@@ -293,7 +301,7 @@ contains
       moduleSearch: do 
 
          ! read line from input file
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -333,7 +341,7 @@ contains
       varSearch: do 
 
          ! read line from input file: should be name = value
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -512,6 +520,12 @@ contains
    character (16), parameter :: &
       rtnName = 'SCRIP_ConfigRead'
 
+   character (10)  :: &
+       read_format           ! format specifier for reading inputString
+
+       ! create format specifier that matches SCRIP character length
+       write(read_format, '(a2,I3,a1)') '(a', SCRIP_CharLength, ')'
+
 !-----------------------------------------------------------------------
 !
 !  check to see if unit is open and rewind unit
@@ -541,7 +555,7 @@ contains
       moduleSearch: do 
 
          ! read line from input file
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -581,7 +595,7 @@ contains
       varSearch: do 
 
          ! read line from input file: should be name = value
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -759,6 +773,12 @@ contains
    character (16), parameter :: &
       rtnName = 'SCRIP_ConfigRead'
 
+   character (10)  :: &
+       read_format           ! format specifier for reading inputString
+
+       ! create format specifier that matches SCRIP character length
+       write(read_format, '(a2,I3,a1)') '(a', SCRIP_CharLength, ')'
+       
 !-----------------------------------------------------------------------
 !
 !  check to see if unit is open and rewind unit
@@ -788,7 +808,7 @@ contains
       moduleSearch: do 
 
          ! read line from input file
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -828,7 +848,7 @@ contains
       varSearch: do 
 
          ! read line from input file: should be name = value
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -1006,6 +1026,12 @@ contains
    character (16), parameter :: &
       rtnName = 'SCRIP_ConfigRead'
 
+   character (10)  :: &
+       read_format           ! format specifier for reading inputString
+
+       ! create format specifier that matches SCRIP character length
+       write(read_format, '(a2,I3,a1)') '(a', SCRIP_CharLength, ')'
+
 !-----------------------------------------------------------------------
 !
 !  check to see if unit is open and rewind unit
@@ -1035,7 +1061,7 @@ contains
       moduleSearch: do 
 
          ! read line from input file
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -1075,7 +1101,7 @@ contains
       varSearch: do 
 
          ! read line from input file: should be name = value
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -1261,11 +1287,19 @@ contains
    character (16), parameter :: &
       rtnName = 'SCRIP_ConfigRead'
 
+   character (10)  :: &
+       read_format           ! format specifier for reading inputString
+
+       ! create format specifier that matches SCRIP character length
+       write(read_format, '(a2,I3,a1)') '(a', SCRIP_CharLength, ')'
+
 !-----------------------------------------------------------------------
 !
 !  check to see if unit is open and rewind unit
 !
 !-----------------------------------------------------------------------
+
+   !write(SCRIP_stdout, '(a20,a20)') "read_format: ", read_format 
 
    errorCode = SCRIP_Success
    errVal = 0
@@ -1290,7 +1324,7 @@ contains
       moduleSearch: do 
 
          ! read line from input file
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -1330,7 +1364,7 @@ contains
       varSearch: do 
 
          ! read line from input file: should be name = value
-         read(iunit, '(a100)', iostat=istat) inputString
+         read(iunit, read_format, iostat=istat) inputString
 
          ! check for read errors
          if (istat < 0) then ! end of file
@@ -1388,9 +1422,8 @@ contains
 !-----------------------------------------------------------------------
 
    if (SCRIP_myTask == SCRIP_masterTask) then
-
       if (variableFound) then
-         read(tmpString(indx+1:),*) variable
+         read(tmpString(indx+1:),*) variable   !!! some problem here !!!
       else
          variable = defaultValue
          write(SCRIP_stdout, '(a37,a)') &
