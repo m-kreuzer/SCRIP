@@ -60,7 +60,7 @@
         subroutine remap(dst_array, map_wts, dst_add, src_add, 
      &                   src_array, src_grad1, src_grad2, src_grad3)
 
-        use kinds_mod
+        !use kinds_mod
         use constants
 
         implicit none
@@ -131,7 +131,7 @@
       character (SCRIP_charLength) :: 
      &          dim_name    ! netCDF dimension name
 
-      integer (SCRIP_i4) :: i,j,n,
+      integer (SCRIP_i4) :: i,j,
      &    iunit  ! unit number for namelist file
 
       integer (SCRIP_i4), dimension(:), allocatable ::
@@ -151,6 +151,9 @@
      &    grad2_lat, 
      &    grad2_lon  
 
+
+      character (17), parameter :: 
+     &    rtnName = 'SCRIP_test_repeat'
 !-----------------------------------------------------------------------
 !
 !     initialize SCRIP
@@ -160,7 +163,8 @@
       errorCode = SCRIP_Success
       call SCRIP_CommInitMessageEnvironment
       call SCRIP_Initialize(errorCode)
-      if (SCRIP_errorCheck(errorCode,'error initializing SCRIP')) then
+      if (SCRIP_errorCheck(errorCode, rtnName, 
+     &                     'error initializing SCRIP')) then
          call SCRIP_ErrorPrint(errorCode, SCRIP_masterTask)
          call SCRIP_CommExitMessageEnvironment
          stop
@@ -173,7 +177,8 @@
 !-----------------------------------------------------------------------
 
       call SCRIP_IOUnitsGet(iunit)
-      open(iunit, file='repeat_test_in', status='old', form='formatted')
+      open(iunit, file='scrip_repeat_test_in', status='old', 
+     &      form='formatted')
       read(iunit, nml=remap_inputs)
       call SCRIP_IOUnitsRelease(iunit)
       write(*,nml=remap_inputs)

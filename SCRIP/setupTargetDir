@@ -56,11 +56,19 @@ if (-e $workdir) then
     mkdir $workdir/testRepeat
     chmod 0775 $workdir/testRepeat
   endif
+  if (-e $workdir/regrid) then
+    echo "Directory $workdir/regrid exists"
+  else
+    echo "Regrid directory does not exist; creating"
+    mkdir $workdir/regrid
+    chmod 0775 $workdir/regrid
+  endif
 else
   echo "Directory $workdir does not exist; creating"
   mkdir $workdir
   mkdir $workdir/test
   mkdir $workdir/testRepeat
+  mkdir $workdir/regrid
   chmod -R 0775 $workdir
 endif
 
@@ -83,6 +91,11 @@ if ($?SCRIPDIR) then
   else
      echo "ERROR: could not find $SCRIPDIR/build/GNUmakefileTestRepeat"
   endif
+  if (-e $SCRIPDIR/build/GNUmakefileRegrid) then
+     cp $SCRIPDIR/build/GNUmakefileRegrid $workdir/regrid/GNUmakefile
+  else
+     echo "ERROR: could not find $SCRIPDIR/build/GNUmakefileRegrid"
+  endif
 else
   echo "SCRIPDIR environment not yet specified; must setenv SCRIPDIR"
   exit 3
@@ -90,11 +103,15 @@ endif
 
 # Copy driver files and sample inputs
 
+echo "Copying input files from $SCRIPDIR"
 cp $SCRIPDIR/scrip_in $workdir
 cp $SCRIPDIR/scrip_test_in $workdir/test
-cp $SCRIPDIR/scrip_test_in $workdir/testRepeat
+cp $SCRIPDIR/scrip_test_repeat_in $workdir/testRepeat
+cp $SCRIPDIR/scrip_regrid_in $workdir/regrid
 
+echo "Copying driver files from $SCRIPDIR/drivers"
 cp $SCRIPDIR/drivers/SCRIP_driver.F90 $workdir
 cp $SCRIPDIR/drivers/scrip_test.f $workdir/test
 cp $SCRIPDIR/drivers/scrip_test_repeat.f $workdir/testRepeat
+cp $SCRIPDIR/drivers/scrip_regrid.F90 $workdir/regrid
 

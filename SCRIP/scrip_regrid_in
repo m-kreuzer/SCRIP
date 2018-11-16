@@ -1,0 +1,39 @@
+&remapInputs
+
+    input_file= 'out_MOM_to_PISM_conserv.2.nc'
+    !input_file= 'out_MOM_to_PISM_conserv.pico_mask2.nc'
+    !input_file= 'out_MOM_to_PISM_conserv.SCRIP_weight.nc'
+    !input_file= 'out_MOM_to_PISMnm_conserv.SCRIP_weight.nc'
+    !input_file= 'out_MOM_to_PISMnm_conserv_destArea.SCRIP_weight.nc'
+    !input_file= 'out_MOM_to_PISM_conserv.SCRIP_weight_latlon.nc'
+    !input_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/input/10000-best4km_topgmat_picos_cc-no_timestamp.nc'
+    !input_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/MOM-pure.regrid.nc'
+    !input_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/input/PICO_thinned.nc'
+    
+    field_name = 'dst_array1'
+    !field_name = 'pico_temperature_box0'
+    !field_name = 'mask'
+    !field_name = 'temp'
+    !field_name = 'pico_temperature_box0'
+
+
+    interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.PISM_to_MOM.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.PISM_to_MOM.pico_mask2.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_PISM_to_MOM_conserv.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_PISMnm_to_MOM_conserv.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_PISMnm_to_MOM_conserv_destArea.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/SCRIP/SCRIP/rmp_PISM_to_MOM_conserv_latlon.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/pism_input/MOM_PISM_regrid/remapcon/regrid_weights.PISM_to_MOM.nc'
+    
+    output_file = 'out_PISM_to_MOM_conserv.2.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.pico_mask2.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.SCRIP_weight.nc'
+    !output_file = 'out_PISMnm_to_MOM_conserv.SCRIP_weight.nc'
+    !output_file = 'out_PISMnm_to_MOM_conserv_destArea.SCRIP_weight.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.SCRIP_weight_latlon.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.SCRIP_weight.pico_temp_box0.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.SCRIP_weight.mask.nc'
+    !output_file = 'out_PISM_to_MOM_conserv.pico_temperature_box0.nc'
+
+
+/
