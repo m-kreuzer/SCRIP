@@ -1,0 +1,10 @@
+# these files/directories will be ignored by git
+
+compile/
+
+scrip
+scrip_db
+scrip_test
+scrip_test_db
+scrip_test_repeat
+scrip_test_repeat_db
