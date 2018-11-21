@@ -71,7 +71,8 @@ endif
 #----------------------------------------------------------------------------
 
 #FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -i-dynamic -convert big_endian 
-FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -shared-intel -convert big_endian 
+FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -shared-intel -convert big_endian
+#FBASE = $(ABI) $(NETCDFINC) $(MPI_COMPILE_FLAGS) -I$(DepDir) -mcmodel=medium -shared-intel -convert big_endian -fp-model precise
 MODSUF = mod
 
 ifeq ($(TRAP_FPE),yes)
