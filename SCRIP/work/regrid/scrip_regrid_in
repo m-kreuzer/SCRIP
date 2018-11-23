@@ -1,1 +1,10 @@
-/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/regrid_output/scrip_regrid_in.MOM_to_PISM
+&remapInputs
+
+    ! this is a example namelist for regridding with SCRIP
+
+    input_file = '/path/in.nc'
+    field_name = 'var1'
+    interp_file = '/path/weights.nc'
+    output_file = 'path/out.nc'
+
+/

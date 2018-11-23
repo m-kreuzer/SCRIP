@@ -36,7 +36,7 @@
 ! !DEFINED PARAMETERS:
 
    integer, parameter, public ::                  &
-      SCRIP_CharLength  = 140                    ,&
+      SCRIP_CharLength  = 200                    ,&
       SCRIP_Logical     = kind(.true.)           ,&
       SCRIP_i4          = selected_int_kind(6)   ,&
       SCRIP_i8          = selected_int_kind(13)  ,&
