@@ -1,12 +1,14 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!     this program is a short driver that regrids a variable read from
-!     a netCDF file (CF format) and stores the result in a netCDF file
-!     in SCRIP format
+!     this program is a short driver to read a variable from a netCDF
+!     file with CF format and store it in a netCDF file with SCRIP format
+!       -> needs interpolation weights file which stores grid
+!       information in SCRIP format
+!       
 !
 !       based on:
 !     CVS: $Id: scrip_test.f,v 1.6 2000/04/19 21:45:09 pwjones Exp $
-!
+!     
 !       which comes with the following license:
 !-----------------------------------------------------------------------
 !
@@ -35,7 +37,7 @@
 !
 !***********************************************************************
 
-      program scrip_regrid
+      program convert_grid_descript
 
 !-----------------------------------------------------------------------
 
@@ -81,7 +83,8 @@
 
       character (SCRIP_charLength) ::  &  ! namelist variables
               input_file,       &! name of input file containing data
-              field_name,       &! input_file variable to be regridded
+              field_name_in,    &! variable name to be converted
+              field_name_out,   &! name for converted variable in output_file
               interp_file,      &! filename of regridding weights
               output_file        ! name of file with regridded output
 
@@ -102,7 +105,8 @@
               nc_dstarray1_id, nc_dstarray1a_id, nc_dstarray2_id, &
               nc_dsterror1_id, nc_dsterror1a_id, nc_dsterror2_id 
 
-      integer (SCRIP_i4), dimension(:), allocatable ::  &
+      !integer (SCRIP_i4), dimension(:), allocatable ::  &
+      integer (SCRIP_i4)  ::  &
               nc_grid1size_id, nc_grid2size_id
 
 !-----------------------------------------------------------------------
@@ -145,7 +149,7 @@
       character (10) :: format_str 
 
       character (12) ::   &
-          rtnName = 'scrip_regrid'
+          rtnName = 'convert_grid-descript'
 
 !-----------------------------------------------------------------------
 !
@@ -158,7 +162,7 @@
       call SCRIP_Initialize(errorCode)
       if (SCRIP_errorCheck(errorCode, rtnName, &
                            'error initializing SCRIP')) then 
-        call SCRIP_RegridExit(errorCode)
+        call SCRIP_ConvertExit(errorCode)
       endif
 
 !!-----------------------------------------------------------------------
@@ -179,39 +183,46 @@
 !
 !-----------------------------------------------------------------------
 
-      call SCRIP_ConfigOpen(iunit, errorCode, 'scrip_regrid_in')
+      call SCRIP_ConfigOpen(iunit, errorCode, 'convert_grid-descript_in')
       if (SCRIP_ErrorCheck(errorCode, rtnName, &
-          'error opening config file')) call SCRIP_RegridExit(errorCode)
+          'error opening config file')) call SCRIP_ConvertExit(errorCode)
 
-      call SCRIP_ConfigRead(iunit, 'remapInputs',                      &
+      call SCRIP_ConfigRead(iunit, 'convertInputs',                    &
             'input_file', input_file, 'unknown', errorCode,            &
              outStringBefore='file containing data for regridding: ')
       if (SCRIP_ErrorCheck(errorCode, rtnName,   &
-          'error reading input_file')) call SCRIP_RegridExit(errorCode)
+          'error reading input_file')) call SCRIP_ConvertExit(errorCode)
 
 
-      call SCRIP_ConfigRead(iunit, 'remapInputs',                      &
-                    'field_name', field_name, 'unknown', errorCode,    &
-                    outStringBefore= 'variable/field to be regridded: ')
+      call SCRIP_ConfigRead(iunit, 'convertInputs',                    &
+                'field_name_in', field_name_in, 'unknown', errorCode,  &
+                outStringBefore= 'variable/field to be regridded: ')
       if (SCRIP_ErrorCheck(errorCode, rtnName,   &
-          'error reading input_file')) call SCRIP_RegridExit(errorCode)
+          'error reading input_file')) call SCRIP_ConvertExit(errorCode)
 
-      call SCRIP_ConfigRead(iunit, 'remapInputs',                      &
+      call SCRIP_ConfigRead(iunit, 'convertInputs',                    &
+            'field_name_out', field_name_out, 'unknown', errorCode,    &
+            outStringBefore=                                           &
+            'interpolation file containing weights for regridding: ')
+      if (SCRIP_ErrorCheck(errorCode, rtnName,   &
+          'error reading input_file')) call SCRIP_ConvertExit(errorCode)
+
+      call SCRIP_ConfigRead(iunit, 'convertInputs',                    &
                     'interp_file', interp_file, 'unknown', errorCode,  &
                     outStringBefore=                                   &
             'interpolation file containing weights for regridding: ')
       if (SCRIP_ErrorCheck(errorCode, rtnName,   &
-          'error reading input_file')) call SCRIP_RegridExit(errorCode) 
-      
-      call SCRIP_ConfigRead(iunit, 'remapInputs',                      &
+          'error reading input_file')) call SCRIP_ConvertExit(errorCode)
+
+      call SCRIP_ConfigRead(iunit, 'convertInputs',                    &
                     'output_file', output_file, 'unknown', errorCode,  &
                     outStringBefore='output file with regridded data: ')
       if (SCRIP_ErrorCheck(errorCode, rtnName,   &
-          'error reading input_file')) call SCRIP_RegridExit(errorCode) 
+          'error reading input_file')) call SCRIP_ConvertExit(errorCode)
 
       call SCRIP_ConfigClose(iunit, errorCode)
       if (SCRIP_ErrorCheck(errorCode, rtnName, &
-          'error closing config file')) call SCRIP_RegridExit(errorCode)
+          'error closing config file')) call SCRIP_ConvertExit(errorCode)
 
 !-----------------------------------------------------------------------
 !
@@ -223,7 +234,7 @@
       !   saving 'title' metadata to map_name
       call read_remap(map_name, interp_file, errorCode)
       if (SCRIP_ErrorCheck(errorCode, rtnName,  &
-          'error reading remap file')) call SCRIP_RegridExit(errorCode)
+          'error reading remap file')) call SCRIP_ConvertExit(errorCode)
 
 !-----------------------------------------------------------------------
 !
@@ -244,16 +255,16 @@
                 grid2_imask    (grid2_size),  &
                 grid2_count    (grid2_size))
 
-      where (grid1_mask)
-        grid1_imask = 1
-      elsewhere
-        grid1_imask = 0
-      endwhere
-      where (grid2_mask)
-        grid2_imask = 1
-      elsewhere
-        grid2_imask = 0
-      endwhere
+      !where (grid1_mask)
+      !  grid1_imask = 1
+      !elsewhere
+      !  grid1_imask = 0
+      !endwhere
+      !where (grid2_mask)
+      !  grid2_imask = 1
+      !elsewhere
+      !  grid2_imask = 0
+      !endwhere
 
 !-----------------------------------------------------------------------
 !
@@ -267,40 +278,44 @@
 
       ncstat = nf90_create (output_file, NF90_CLOBBER, nc_outfile_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
-          'error opening output file')) call SCRIP_RegridExit(errorCode)
+          'error opening output file')) call SCRIP_ConvertExit(errorCode)
 
 
       ncstat = nf90_put_att(nc_outfile_id, NF90_GLOBAL, 'title',     &
-                            map_name)
+                            !map_name)
+                            'convert')
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,         &
                                  'error writing output file title')) &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** define grid size dimensions
       !***
 
-      allocate( nc_grid1size_id(grid1_rank),  &
-                nc_grid2size_id(grid2_rank))
+      !allocate( nc_grid1size_id(grid1_rank),  &
+      !          nc_grid2size_id(grid2_rank))
+      !allocate( nc_grid1size_id(1),  &
+      !          nc_grid2size_id(1))
 
 
       format_str = '(a9,i1)'
 
-      do n=1,grid1_rank
-        write(dim_name, format_str) 'grid1_dim',n
-        ncstat = nf90_def_dim(nc_outfile_id, dim_name, &
-                              grid1_dims(n), nc_grid1size_id(n))
+      !do n=1,grid1_rank
+        !write(dim_name, format_str) 'grid1_dim',n
+        ncstat = nf90_def_dim(nc_outfile_id, 'grid_size', &
+                              grid2_size, nc_grid2size_id)
         if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
-            'error defining grid1 dims')) call SCRIP_RegridExit(errorCode)
-      end do
+                'error defining grid_size dimension'))          &
+            call SCRIP_ConvertExit(errorCode)
+      !end do
 
-      do n=1,grid2_rank
-        write(dim_name, format_str) 'grid2_dim',n
-        ncstat = nf90_def_dim(nc_outfile_id, dim_name, &
-                              grid2_dims(n), nc_grid2size_id(n))
-        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
-            'error defining grid2 dims')) call SCRIP_RegridExit(errorCode)
-      end do
+      !do n=1,grid2_rank
+      !  write(dim_name, format_str) 'grid2_dim',n
+      !  ncstat = nf90_def_dim(nc_outfile_id, dim_name, &
+      !                        grid2_dims(n), nc_grid2size_id(n))
+      !  if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
+      !      'error defining grid2 dims')) call SCRIP_ConvertExit(errorCode)
+      !end do
       
       !1000 format(a9,i1)
 
@@ -308,204 +323,209 @@
       !*** define grid center latitude array
       !***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grid_center_lat', &
-                            NF90_DOUBLE, nc_grid1size_id, &
-                            nc_srcgrdcntrlat_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
-          'error defining src grid center lat')) &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grid_center_lat', &
+      !                      NF90_DOUBLE, nc_grid1size_id, &
+      !                      nc_srcgrdcntrlat_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
+      !    'error defining src grid center lat')) &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdcntrlat_id, &  
-                            'units', 'radians')  
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
-          'error adding units src grid center lat')) &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdcntrlat_id, &  
+      !                      'units', 'radians')  
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
+      !    'error adding units src grid center lat')) &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_center_lat', &
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_center_lat', &
+      ncstat = nf90_def_var(nc_outfile_id, 'grid_center_lat', &
                             NF90_DOUBLE, nc_grid2size_id, &
                             nc_dstgrdcntrlat_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
           'error defining dst grid center lat'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       ncstat = nf90_put_att(nc_outfile_id, nc_dstgrdcntrlat_id,  &
                             'units', 'radians')  
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                     'error adding units dst grid center lon'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** define grid center longitude array
       !***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grid_center_lon',  &
-                            NF90_DOUBLE, nc_grid1size_id,  &
-                            nc_srcgrdcntrlon_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                        'error defining src grid center lon'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grid_center_lon',  &
+      !                      NF90_DOUBLE, nc_grid1size_id,  &
+      !                      nc_srcgrdcntrlon_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                  'error defining src grid center lon'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdcntrlon_id, &
-                            'units', 'radians')
-      if (scrip_netcdferrorcheck(ncstat, errorcode, rtnname, &
-                    'error adding units src grid center lon'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdcntrlon_id, &
+      !                      'units', 'radians')
+      !if (scrip_netcdferrorcheck(ncstat, errorcode, rtnname, &
+      !              'error adding units src grid center lon'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_center_lon',  &
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_center_lon',  &
+      ncstat = nf90_def_var(nc_outfile_id, 'grid_center_lon',  &
                             NF90_DOUBLE, nc_grid2size_id,  &
                             nc_dstgrdcntrlon_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                         'error defining dst grid center lon'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       ncstat = nf90_put_att(nc_outfile_id, nc_dstgrdcntrlon_id, &
                             'units', 'radians')
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                     'error adding units dst grid center lon'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** define grid mask
       !***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grid_imask', NF90_INT, &
-                            nc_grid1size_id, nc_srcgrdimask_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                             'error defining src grid mask'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grid_imask', NF90_INT, &
+      !                      nc_grid1size_id, nc_srcgrdimask_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                       'error defining src grid mask'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdimask_id, &
-                            'units', 'unitless')
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                             'error adding units to src mask'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_put_att(nc_outfile_id, nc_srcgrdimask_id, &
+      !                      'units', 'unitless')
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                       'error adding units to src mask'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_imask', NF90_INT, &
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_imask', NF90_INT, &
+      ncstat = nf90_def_var(nc_outfile_id, 'grid_imask', NF90_INT, &
                             nc_grid2size_id, nc_dstgrdimask_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error defining dst mask'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       ncstat = nf90_put_att(nc_outfile_id, nc_dstgrdimask_id, &
                             'units', 'unitless')
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error adding units to dst mask'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define grid area arrays
-      !***
+      !!***
+      !!*** define grid area arrays
+      !!***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grid_area', &
-                            NF90_DOUBLE, nc_grid1size_id, &
-                            nc_srcgrdarea_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining src area'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grid_area', &
+      !                      NF90_DOUBLE, nc_grid1size_id, &
+      !                      nc_srcgrdarea_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining src area'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_area',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dstgrdarea_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining dst area'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_area',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dstgrdarea_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining dst area'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define grid fraction arrays
-      !***
+      !!***
+      !!*** define grid fraction arrays
+      !!***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grid_frac',  &
-                            NF90_DOUBLE, nc_grid1size_id,  &
-                            nc_srcgrdfrac_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining src grid frac'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grid_frac',  &
+      !                      NF90_DOUBLE, nc_grid1size_id,  &
+      !                      nc_srcgrdfrac_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining src grid frac'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_frac',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dstgrdfrac_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining dst grid frac'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_grid_frac',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dstgrdfrac_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining dst grid frac'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define source array
-      !***
+      !!***
+      !!*** define source array
+      !!***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_array',  &
-                            NF90_DOUBLE, nc_grid1size_id,  &
-                            nc_srcarray_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining src field'))  &
-          call SCRIP_RegridExit(errorCode)
+      !!ncstat = nf90_def_var(nc_outfile_id, 'src_array',  &
+      !ncstat = nf90_def_var(nc_outfile_id, field_name_out,  &
+      !                      NF90_DOUBLE, nc_grid1size_id,  &
+      !                      nc_srcarray_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining src field'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define gradient arrays
-      !***
+      !!***
+      !!*** define gradient arrays
+      !!***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grad_lat',  &
-                            NF90_DOUBLE, nc_grid1size_id,  &
-                            nc_srcgradlat_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining source lat gradient'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grad_lat',  &
+      !                      NF90_DOUBLE, nc_grid1size_id,  &
+      !                      nc_srcgradlat_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining source lat gradient'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'src_grad_lon',  &
-                            NF90_DOUBLE, nc_grid1size_id,  &
-                            nc_srcgradlon_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error defining source lon gradient'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'src_grad_lon',  &
+      !                      NF90_DOUBLE, nc_grid1size_id,  &
+      !                      nc_srcgradlon_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error defining source lon gradient'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** define destination arrays
       !***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_array1',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_array1',    &
+      ncstat = nf90_def_var(nc_outfile_id, field_name_out,  &
+                            NF90_DOUBLE, nc_grid2size_id,   &
                             nc_dstarray1_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                        'error defining 1st order dst field'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_array1a',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dstarray1a_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 1.5 order dst field'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_array1a',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dstarray1a_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error defining 1.5 order dst field'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_array2',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dstarray2_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 2nd order dst field'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_array2',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dstarray2_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error defining 2nd order dst field'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define error arrays
-      !***
+      !!***
+      !!*** define error arrays
+      !!***
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_error1',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dsterror1_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 1st order error'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_error1',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dsterror1_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error defining 1st order error'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_error1a',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dsterror1a_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 1.5 order error'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_error1a',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dsterror1a_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error defining 1.5 order error'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      ncstat = nf90_def_var(nc_outfile_id, 'dst_error2',  &
-                            NF90_DOUBLE, nc_grid2size_id,  &
-                            nc_dsterror2_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 2nd order error'))  &
-          call SCRIP_RegridExit(errorCode)
+      !ncstat = nf90_def_var(nc_outfile_id, 'dst_error2',  &
+      !                      NF90_DOUBLE, nc_grid2size_id,  &
+      !                      nc_dsterror2_id)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error defining 2nd order error'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** end definition stage
@@ -514,7 +534,7 @@
       ncstat = nf90_enddef(nc_outfile_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                        'error ending netCDF definition phase'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
 !-----------------------------------------------------------------------
 !
@@ -528,18 +548,18 @@
 
       allocate(grid1tmp2d(grid1_dims(1),grid1_dims(2)), &
                grid2tmp2d(grid2_dims(1),grid2_dims(2)))
-      n = 0
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1tmp2d(i,j) = grid1_center_lat(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdcntrlat_id, &
-                            grid1tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error writing src grid center lat'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1tmp2d(i,j) = grid1_center_lat(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdcntrlat_id, &
+      !                      grid1tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                 'error writing src grid center lat'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       n = 0
       do j=1,grid2_dims(2)
@@ -552,24 +572,24 @@
                             grid2tmp2d)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                        'error writing dst grid center lat'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** write grid center longitude array
       !***
 
-      n = 0 
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1tmp2d(i,j) = grid1_center_lon(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdcntrlon_id, &
-                            grid1tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing src grid lon'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0 
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1tmp2d(i,j) = grid1_center_lon(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdcntrlon_id, &
+      !                      grid1tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing src grid lon'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       n = 0
       do j=1,grid2_dims(2)
@@ -582,7 +602,7 @@
                             grid2tmp2d)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error writing dst grid lon'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** write grid mask
@@ -590,18 +610,18 @@
       
       allocate(grid1itmp2d(grid1_dims(1),grid1_dims(2)), &
                grid2itmp2d(grid2_dims(1),grid2_dims(2)))
-      n = 0
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1itmp2d(i,j) = grid1_imask(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdimask_id, &
-                            grid1itmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing src grid mask'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1itmp2d(i,j) = grid1_imask(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdimask_id, &
+      !                      grid1itmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing src grid mask'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       n = 0
       do j=1,grid2_dims(2)
@@ -614,109 +634,98 @@
                             grid2itmp2d)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error writing dst grid mask'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
-      !***
-      !*** define grid area arrays
-      !***
+      !!***
+      !!*** define grid area arrays
+      !!***
 
-      n = 0
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1tmp2d(i,j) = grid1_area(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdarea_id, &
-                            grid1tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing src grid area'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1tmp2d(i,j) = grid1_area(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdarea_id, &
+      !                      grid1tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing src grid area'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2tmp2d(i,j) = grid2_area(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdarea_id, &
-                            grid2tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing dst grid area'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2tmp2d(i,j) = grid2_area(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdarea_id, &
+      !                      grid2tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing dst grid area'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       !***
       !*** define grid fraction arrays
       !***
 
-      n = 0
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1tmp2d(i,j) = grid1_frac(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdfrac_id,  &
-                            grid1tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing src grid frac'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1tmp2d(i,j) = grid1_frac(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcgrdfrac_id,  &
+      !                      grid1tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing src grid frac'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2tmp2d(i,j) = grid2_frac(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdfrac_id, &
-                            grid2tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing dst grid frac'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2tmp2d(i,j) = grid2_frac(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdfrac_id, &
+      !                      grid2tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing dst grid frac'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
 
 !-----------------------------------------------------------------------
 !
-!    reading field_name variable from input_file 
-!       -> storing in grid1_array
+!    reading field_name_in variable from input_file 
+!       -> storing in grid2_array
 !
 !-----------------------------------------------------------------------
 
-!     write(*,*) "  **** debug: scrip_regrid 1 ****"
       ncstat = nf90_open(input_file, NF90_NOWRITE, nc_inputfile_id) 
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,   &
-                                 'error opening input_file'))  &
-          call SCRIP_RegridExit(errorCode)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error opening input_file'))       &
+          call SCRIP_ConvertExit(errorCode)
 
-!     write(*,*) "  **** debug: scrip_regrid 2 ****"
-      ncstat = nf90_inq_varid(nc_inputfile_id, field_name,  &
+      ncstat = nf90_inq_varid(nc_inputfile_id, field_name_in,       &
                                 nc_fieldname_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,     &
-                                'error getting field_name id'))  &
-          call SCRIP_RegridExit(errorCode)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                'error getting field_name_in id'))  &
+          call SCRIP_ConvertExit(errorCode)
 
-!     write(*,*) "  **** debug: scrip_regrid 3 ****"
-      !ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,  &
-      !                      grid1_array)
-      ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,  &
-                            !grid1_array, start = (/1, 1, 1, 1/),  &
-                            !count = (/120, 80, 1, 1/) )
-                            !grid1_array, start = (/1, 1, 1, 1/),  &
-                            !count = (/761, 761, 1, 1/) )
-                            grid1_array, start = (/1, 1, 1, 1/),  &
-                            count = (/grid1_dims(1), grid1_dims(2), 1, 1/) )
-!     write(SCRIP_Stdout, '(a,I)') "ncstat: ", ncstat
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,   &
-                                 'error reading field_name'))  &
-          call SCRIP_RegridExit(errorCode)
+      ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,       &
+                        grid2_array, start = (/1, 1, 1, 1/),        &
+                        count = (/grid1_dims(1), grid1_dims(2), 1, 1/) )
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error reading field_name_in'))    &
+          call SCRIP_ConvertExit(errorCode)
 
-!     write(*,*) "  **** debug: scrip_regrid 4 ****"
       ncstat = nf90_close(nc_inputfile_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,   &
-                                 'error closing input_file'))  &
-          call SCRIP_RegridExit(errorCode)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error closing input_file'))       &
+          call SCRIP_ConvertExit(errorCode)
 
 
 
@@ -815,7 +824,7 @@
 !
 !        call SCRIP_ErrorSet(errorCode, rtnName, &
 !                            'Bad choice for field to interpolate')
-!        call SCRIP_RegridExit(errorCode)
+!        call SCRIP_ConvertExit(errorCode)
 !
 !      end select
 
@@ -825,238 +834,238 @@
 !
 !-----------------------------------------------------------------------
 
-      if (map_type == map_type_bicubic) then
-       
-         call SCRIP_ErrorSet(errorCode, rtnName, &
-                            'bicubic interpolation not supported')
-        
-      !  allocate (grad1_latlon (grid1_size)) 
-
-      !  nx = grid1_dims(1)
-      !  ny = grid1_dims(2)
-
-      !  do n=1,grid1_size
-
-      !    grad1_lat(n) = zero
-      !    grad1_lon(n) = zero
-      !    grad1_latlon(n) = zero
-
-      !    if (grid1_mask(n)) then
-
-      !      delew = half
-      !      delns = half
-
-      !      j = (n-1)/nx + 1
-      !      i = n - (j-1)*nx
-
-      !      ip1 = i+1
-      !      im1 = i-1
-      !      jp1 = j+1
-      !      jm1 = j-1
-
-      !      if (ip1 > nx) ip1 = ip1 - nx
-      !      if (im1 < 1 ) im1 = nx
-      !      if (jp1 > ny) then
-      !        jp1 = j
-      !        delns = one
-      !      endif
-      !      if (jm1 < 1 ) then
-      !        jm1 = j
-      !        delns = one
-      !      endif
-
-      !      in  = (jp1-1)*nx + i
-      !      is  = (jm1-1)*nx + i
-      !      ie  = (j  -1)*nx + ip1
-      !      iw  = (j  -1)*nx + im1
-
-      !      ine = (jp1-1)*nx + ip1
-      !      inw = (jp1-1)*nx + im1
-      !      ise = (jm1-1)*nx + ip1
-      !      isw = (jm1-1)*nx + im1
-
-      !      !*** compute i-gradient
-
-      !      if (.not. grid1_mask(ie)) then
-      !        ie = n
-      !        delew = one
-      !      endif
-      !      if (.not. grid1_mask(iw)) then
-      !        iw = n
-      !        delew = one
-      !      endif
- 
-      !      grad1_lat(n) = delew*(grid1_array(ie) - grid1_array(iw))
-
-      !      !*** compute j-gradient
-
-      !      if (.not. grid1_mask(in)) then
-      !        in = n
-      !        delns = one
-      !      endif
-      !      if (.not. grid1_mask(is)) then
-      !        is = n
-      !        delns = one
-      !      endif
- 
-      !      grad1_lon(n) = delns*(grid1_array(in) - grid1_array(is))
-
-      !      !*** compute ij-gradient
-
-      !      delew = half
-      !      if (jp1 == j .or. jm1 == j) then
-      !        delns = one
-      !      else 
-      !        delns = half
-      !      endif
-
-      !      if (.not. grid1_mask(ine)) then
-      !        if (in /= n) then
-      !          ine = in
-      !          delew = one
-      !        else if (ie /= n) then
-      !          ine = ie
-      !          inw = iw
-      !          if (inw == n) delew = one
-      !          delns = one
-      !        else
-      !          ine = n
-      !          inw = iw
-      !          delew = one
-      !          delns = one
-      !        endif
-      !      endif
-
-      !      if (.not. grid1_mask(inw)) then
-      !        if (in /= n) then
-      !          inw = in
-      !          delew = one
-      !        else if (iw /= n) then
-      !          inw = iw
-      !          ine = ie
-      !          if (ie == n) delew = one
-      !          delns = one
-      !        else
-      !          inw = n
-      !          ine = ie
-      !          delew = one
-      !          delns = one
-      !        endif
-      !      endif
-
-      !      grad1_lat_zero(n) = delew*(grid1_array(ine) - &
-      !                                 grid1_array(inw))
-
-      !      if (.not. grid1_mask(ise)) then
-      !        if (is /= n) then
-      !          ise = is
-      !          delew = one
-      !        else if (ie /= n) then
-      !          ise = ie
-      !          isw = iw
-      !          if (isw == n) delew = one
-      !          delns = one
-      !        else
-      !          ise = n
-      !          isw = iw
-      !          delew = one
-      !          delns = one
-      !        endif
-      !      endif
-
-      !      if (.not. grid1_mask(isw)) then
-      !        if (is /= n) then
-      !          isw = is
-      !          delew = one
-      !        else if (iw /= n) then
-      !          isw = iw
-      !          ise = ie
-      !          if (ie == n) delew = one
-      !          delns = one
-      !        else
-      !          isw = n
-      !          ise = ie
-      !          delew = one
-      !          delns = one
-      !        endif
-      !      endif
-
-      !      grad1_lon_zero(n) = delew*(grid1_array(ise) - &
-      !                                 grid1_array(isw))
-
-      !      grad1_latlon(n) = delns*(grad1_lat_zero(n) - &
-      !                               grad1_lon_zero(n))
-
-      !    endif
-      !  enddo
-      endif
-
-!-----------------------------------------------------------------------
+!      if (map_type == map_type_bicubic) then
+!       
+!         call SCRIP_ErrorSet(errorCode, rtnName, &
+!                            'bicubic interpolation not supported')
+!        
+!      !  allocate (grad1_latlon (grid1_size)) 
 !
-!     test a first-order map from grid1 to grid2
+!      !  nx = grid1_dims(1)
+!      !  ny = grid1_dims(2)
 !
-!-----------------------------------------------------------------------
-
-      grad1_lat_zero = zero
-      grad1_lon_zero = zero
-     
-      !DO n=1,10000   ! temporary change for time measurements 
-
-      if (map_type /= map_type_bicubic) then
-        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
-                   grid1_array)
-      else
-        call SCRIP_ErrorSet(errorCode, rtnName, &
-                            'only bicubic interpolation supported')
-        !call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
-        !           grid1_array, src_grad1=grad1_lat, &
-        !                        src_grad2=grad1_lon, &
-        !                        src_grad3=grad1_latlon)
-      endif
-
-      if (map_type == map_type_conserv .or. &
-          map_type == map_type_particle) then
-        select case (norm_opt)
-        case (norm_opt_none)
-          grid2_err = grid2_frac*grid2_area
-          where (grid2_err /= zero)
-            grid2_tmp = grid2_tmp/grid2_err
-          else where
-            grid2_tmp = zero
-          end where
-        case (norm_opt_frcarea)
-        case (norm_opt_dstarea)
-          where (grid2_frac /= zero)
-            grid2_tmp = grid2_tmp/grid2_frac
-          else where
-            grid2_tmp = zero
-          end where
-        end select
-      end if
-
-      where (grid2_frac > .999)
-        grid2_err = (grid2_tmp - grid2_array)/grid2_array
-      elsewhere 
-        grid2_err = zero
-      end where
-
-      !END DO   ! temporary change for time measurements
-
-      print *,'First order mapping from grid1 to grid2:'
-      print *,'----------------------------------------'
-      print *,'Grid1 min,max: ',minval(grid1_array),maxval(grid1_array)
-      print *,'Grid2 min,max: ',minval(grid2_tmp  ),maxval(grid2_tmp  )
-      print *,' Err2 min,max: ',minval(grid2_err),maxval(grid2_err)
-      print *,' Err2    mean: ',sum(abs(grid2_err))/ &
-                                count(grid2_frac > .999)
-
-      !***
-      !*** Conservation Test
-      !***
-
-      print *,'Conservation:'
-      print *,'Grid1 Integral = ',sum(grid1_array*grid1_area*grid1_frac)
-      print *,'Grid2 Integral = ',sum(grid2_tmp  *grid2_area*grid2_frac)
+!      !  do n=1,grid1_size
+!
+!      !    grad1_lat(n) = zero
+!      !    grad1_lon(n) = zero
+!      !    grad1_latlon(n) = zero
+!
+!      !    if (grid1_mask(n)) then
+!
+!      !      delew = half
+!      !      delns = half
+!
+!      !      j = (n-1)/nx + 1
+!      !      i = n - (j-1)*nx
+!
+!      !      ip1 = i+1
+!      !      im1 = i-1
+!      !      jp1 = j+1
+!      !      jm1 = j-1
+!
+!      !      if (ip1 > nx) ip1 = ip1 - nx
+!      !      if (im1 < 1 ) im1 = nx
+!      !      if (jp1 > ny) then
+!      !        jp1 = j
+!      !        delns = one
+!      !      endif
+!      !      if (jm1 < 1 ) then
+!      !        jm1 = j
+!      !        delns = one
+!      !      endif
+!
+!      !      in  = (jp1-1)*nx + i
+!      !      is  = (jm1-1)*nx + i
+!      !      ie  = (j  -1)*nx + ip1
+!      !      iw  = (j  -1)*nx + im1
+!
+!      !      ine = (jp1-1)*nx + ip1
+!      !      inw = (jp1-1)*nx + im1
+!      !      ise = (jm1-1)*nx + ip1
+!      !      isw = (jm1-1)*nx + im1
+!
+!      !      !*** compute i-gradient
+!
+!      !      if (.not. grid1_mask(ie)) then
+!      !        ie = n
+!      !        delew = one
+!      !      endif
+!      !      if (.not. grid1_mask(iw)) then
+!      !        iw = n
+!      !        delew = one
+!      !      endif
+! 
+!      !      grad1_lat(n) = delew*(grid1_array(ie) - grid1_array(iw))
+!
+!      !      !*** compute j-gradient
+!
+!      !      if (.not. grid1_mask(in)) then
+!      !        in = n
+!      !        delns = one
+!      !      endif
+!      !      if (.not. grid1_mask(is)) then
+!      !        is = n
+!      !        delns = one
+!      !      endif
+! 
+!      !      grad1_lon(n) = delns*(grid1_array(in) - grid1_array(is))
+!
+!      !      !*** compute ij-gradient
+!
+!      !      delew = half
+!      !      if (jp1 == j .or. jm1 == j) then
+!      !        delns = one
+!      !      else 
+!      !        delns = half
+!      !      endif
+!
+!      !      if (.not. grid1_mask(ine)) then
+!      !        if (in /= n) then
+!      !          ine = in
+!      !          delew = one
+!      !        else if (ie /= n) then
+!      !          ine = ie
+!      !          inw = iw
+!      !          if (inw == n) delew = one
+!      !          delns = one
+!      !        else
+!      !          ine = n
+!      !          inw = iw
+!      !          delew = one
+!      !          delns = one
+!      !        endif
+!      !      endif
+!
+!      !      if (.not. grid1_mask(inw)) then
+!      !        if (in /= n) then
+!      !          inw = in
+!      !          delew = one
+!      !        else if (iw /= n) then
+!      !          inw = iw
+!      !          ine = ie
+!      !          if (ie == n) delew = one
+!      !          delns = one
+!      !        else
+!      !          inw = n
+!      !          ine = ie
+!      !          delew = one
+!      !          delns = one
+!      !        endif
+!      !      endif
+!
+!      !      grad1_lat_zero(n) = delew*(grid1_array(ine) - &
+!      !                                 grid1_array(inw))
+!
+!      !      if (.not. grid1_mask(ise)) then
+!      !        if (is /= n) then
+!      !          ise = is
+!      !          delew = one
+!      !        else if (ie /= n) then
+!      !          ise = ie
+!      !          isw = iw
+!      !          if (isw == n) delew = one
+!      !          delns = one
+!      !        else
+!      !          ise = n
+!      !          isw = iw
+!      !          delew = one
+!      !          delns = one
+!      !        endif
+!      !      endif
+!
+!      !      if (.not. grid1_mask(isw)) then
+!      !        if (is /= n) then
+!      !          isw = is
+!      !          delew = one
+!      !        else if (iw /= n) then
+!      !          isw = iw
+!      !          ise = ie
+!      !          if (ie == n) delew = one
+!      !          delns = one
+!      !        else
+!      !          isw = n
+!      !          ise = ie
+!      !          delew = one
+!      !          delns = one
+!      !        endif
+!      !      endif
+!
+!      !      grad1_lon_zero(n) = delew*(grid1_array(ise) - &
+!      !                                 grid1_array(isw))
+!
+!      !      grad1_latlon(n) = delns*(grad1_lat_zero(n) - &
+!      !                               grad1_lon_zero(n))
+!
+!      !    endif
+!      !  enddo
+!      endif
+!
+!!-----------------------------------------------------------------------
+!!
+!!     test a first-order map from grid1 to grid2
+!!
+!!-----------------------------------------------------------------------
+!
+!      grad1_lat_zero = zero
+!      grad1_lon_zero = zero
+!     
+!      !DO n=1,10000   ! temporary change for time measurements 
+!
+!      if (map_type /= map_type_bicubic) then
+!        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
+!                   grid1_array)
+!      else
+!        call SCRIP_ErrorSet(errorCode, rtnName, &
+!                            'only bicubic interpolation supported')
+!        !call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
+!        !           grid1_array, src_grad1=grad1_lat, &
+!        !                        src_grad2=grad1_lon, &
+!        !                        src_grad3=grad1_latlon)
+!      endif
+!
+!      if (map_type == map_type_conserv .or. &
+!          map_type == map_type_particle) then
+!        select case (norm_opt)
+!        case (norm_opt_none)
+!          grid2_err = grid2_frac*grid2_area
+!          where (grid2_err /= zero)
+!            grid2_tmp = grid2_tmp/grid2_err
+!          else where
+!            grid2_tmp = zero
+!          end where
+!        case (norm_opt_frcarea)
+!        case (norm_opt_dstarea)
+!          where (grid2_frac /= zero)
+!            grid2_tmp = grid2_tmp/grid2_frac
+!          else where
+!            grid2_tmp = zero
+!          end where
+!        end select
+!      end if
+!
+!      where (grid2_frac > .999)
+!        grid2_err = (grid2_tmp - grid2_array)/grid2_array
+!      elsewhere 
+!        grid2_err = zero
+!      end where
+!
+!      !END DO   ! temporary change for time measurements
+!
+!      print *,'First order mapping from grid1 to grid2:'
+!      print *,'----------------------------------------'
+!      print *,'Grid1 min,max: ',minval(grid1_array),maxval(grid1_array)
+!      print *,'Grid2 min,max: ',minval(grid2_tmp  ),maxval(grid2_tmp  )
+!      print *,' Err2 min,max: ',minval(grid2_err),maxval(grid2_err)
+!      print *,' Err2    mean: ',sum(abs(grid2_err))/ &
+!                                count(grid2_frac > .999)
+!
+!      !***
+!      !*** Conservation Test
+!      !***
+!
+!      print *,'Conservation:'
+!      print *,'Grid1 Integral = ',sum(grid1_array*grid1_area*grid1_frac)
+!      print *,'Grid2 Integral = ',sum(grid2_tmp  *grid2_area*grid2_frac)
 
 !-----------------------------------------------------------------------
 !
@@ -1064,45 +1073,46 @@
 !
 !-----------------------------------------------------------------------
 
-      n = 0
-      do j=1,grid1_dims(2)
-      do i=1,grid1_dims(1)
-         n = n+1
-         grid1tmp2d(i,j) = grid1_array(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_srcarray_id, &
-                            grid1tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                                 'error writing src field'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid1_dims(2)
+      !do i=1,grid1_dims(1)
+      !   n = n+1
+      !   grid1tmp2d(i,j) = grid1_array(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_srcarray_id, &
+      !                      grid1tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                           'error writing src field'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
       n = 0
       do j=1,grid2_dims(2)
       do i=1,grid2_dims(1)
          n = n+1
          !grid2tmp2d(i,j) = grid2_tmp(n)
-         grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n)
+         !grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n)
+         grid2tmp2d(i,j) = grid2_array(n)
       end do
       end do
       ncstat = nf90_put_var(nc_outfile_id, nc_dstarray1_id, &
                             grid2tmp2d  )
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
                             'error writing remapped field'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2tmp2d(i,j) = grid2_err(n)
-      end do
-      end do
-      ncstat = nf90_put_var(nc_outfile_id, nc_dsterror1_id, &
-                            grid2tmp2d)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                            'error writing 1st order error'))  &
-          call SCRIP_RegridExit(errorCode)
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2tmp2d(i,j) = grid2_err(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dsterror1_id, &
+      !                      grid2tmp2d)
+      !if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+      !                      'error writing 1st order error'))  &
+      !    call SCRIP_ConvertExit(errorCode)
 
 !!-----------------------------------------------------------------------
 !!
@@ -1177,7 +1187,7 @@
 !                              grid1tmp2d)  
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                            'error writing src lat gradient'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !      n = 0
 !      do j=1,grid2_dims(2)
@@ -1190,7 +1200,7 @@
 !                              grid2tmp2d  )
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                           'error writing 1.5 order field'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !      n = 0
 !      do j=1,grid2_dims(2)
@@ -1203,7 +1213,7 @@
 !                              grid2tmp2d)
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                              'error writing 1.5 order error'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !!-----------------------------------------------------------------------
 !!
@@ -1276,7 +1286,7 @@
 !                              grid1tmp2d)
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                            'error writing src lon gradient'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !      n = 0
 !      do j=1,grid2_dims(2)
@@ -1289,7 +1299,7 @@
 !                              grid2tmp2d  )
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                              'error writing 2nd order field'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !      n = 0
 !      do j=1,grid2_dims(2)
@@ -1302,7 +1312,7 @@
 !                              grid2tmp2d)
 !        if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
 !                              'error writing 2nd order error'))  &
-!          call SCRIP_RegridExit(errorCode)
+!          call SCRIP_ConvertExit(errorCode)
 !
 !      endif
 
@@ -1315,7 +1325,7 @@
       ncstat = nf90_close(nc_outfile_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                                  'error closing output file'))  &
-          call SCRIP_RegridExit(errorCode)
+          call SCRIP_ConvertExit(errorCode)
 
 !-----------------------------------------------------------------------
 !
@@ -1323,51 +1333,51 @@
 !
 !-----------------------------------------------------------------------
 
-      grid2_count = zero
-      grid2_tmp   = zero
-      grid2_err   = zero
-
-      print *,'number of sparse matrix entries ',num_links_map1
-      do n=1,num_links_map1
-        grid2_count(grid2_add_map1(n)) =   &
-        grid2_count(grid2_add_map1(n)) + 1
-        if (wts_map1(1,n) > one .or. wts_map1(1,n) < zero) then
-          grid2_tmp(grid2_add_map1(n)) =   &
-          grid2_tmp(grid2_add_map1(n)) + 1
-          grid2_err(grid2_add_map1(n)) = max(abs(wts_map1(1,n)),  &
-          grid2_err(grid2_add_map1(n)) )
-        endif
-      end do
-
-      do n=1,grid2_size
-        if (grid2_tmp(n) > zero) print *,n,nint(grid2_tmp(n)), &
-                                           grid2_err(n)
-      end do
-
-      imin = minval(grid2_count, mask=(grid2_count > 0))
-      imax = maxval(grid2_count)
-      idiff =  (imax - imin)/10 + 1
-      print *,'total number of dest cells ',grid2_size
-      print *,'number of cells participating in remap ',  &
-         count(grid2_count > zero)
-      print *,'min no of entries/row = ',imin
-      print *,'max no of entries/row = ',imax
-
-      imax = imin + idiff
-      do n=1,10
-        print *,'num of rows with entries between ',imin,' - ',imax-1, &
-           count(grid2_count >= imin .and. grid2_count < imax)
-        imin = imin + idiff
-        imax = imax + idiff
-      end do
+!      grid2_count = zero
+!      grid2_tmp   = zero
+!      grid2_err   = zero
+!
+!      print *,'number of sparse matrix entries ',num_links_map1
+!      do n=1,num_links_map1
+!        grid2_count(grid2_add_map1(n)) =   &
+!        grid2_count(grid2_add_map1(n)) + 1
+!        if (wts_map1(1,n) > one .or. wts_map1(1,n) < zero) then
+!          grid2_tmp(grid2_add_map1(n)) =   &
+!          grid2_tmp(grid2_add_map1(n)) + 1
+!          grid2_err(grid2_add_map1(n)) = max(abs(wts_map1(1,n)),  &
+!          grid2_err(grid2_add_map1(n)) )
+!        endif
+!      end do
+!
+!      do n=1,grid2_size
+!        if (grid2_tmp(n) > zero) print *,n,nint(grid2_tmp(n)), &
+!                                           grid2_err(n)
+!      end do
+!
+!      imin = minval(grid2_count, mask=(grid2_count > 0))
+!      imax = maxval(grid2_count)
+!      idiff =  (imax - imin)/10 + 1
+!      print *,'total number of dest cells ',grid2_size
+!      print *,'number of cells participating in remap ',  &
+!         count(grid2_count > zero)
+!      print *,'min no of entries/row = ',imin
+!      print *,'max no of entries/row = ',imax
+!
+!      imax = imin + idiff
+!      do n=1,10
+!        print *,'num of rows with entries between ',imin,' - ',imax-1, &
+!           count(grid2_count >= imin .and. grid2_count < imax)
+!        imin = imin + idiff
+!        imax = imax + idiff
+!      end do
 
 !-----------------------------------------------------------------------
 
-      end program scrip_regrid
+      end program convert_grid_descript
 
 !***********************************************************************
 
-      subroutine SCRIP_RegridExit(errorCode)
+      subroutine SCRIP_ConvertExit(errorCode)
 
       use SCRIP_KindsMod   ! for SCRIP data types
       use SCRIP_CommMod    ! for SCRIP parallel environment
@@ -1380,6 +1390,6 @@
 
       stop
 
-      end subroutine SCRIP_RegridExit
+      end subroutine SCRIP_ConvertExit
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

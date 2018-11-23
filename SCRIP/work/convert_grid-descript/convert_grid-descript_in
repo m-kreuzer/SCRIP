@@ -1,0 +1,10 @@
+&convertInputs
+
+    input_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/data_input/PICO-ex_thinned.nc'
+    field_name_in = 'cell_area'
+    field_name_out = 'grid_area'
+    interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.MOM_to_PISM.conserv.scrip.nc'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.PISM_to_MOM.conserv.scrip.nc'
+    output_file = 'convert_test.nc'
+
+/

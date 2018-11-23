@@ -31,7 +31,8 @@ SHELL = /bin/sh
 #
 #  By default, you build optimized code.  To override, add "OPTIMIZE=no" 
 #  to the make command line.
-OPTIMIZE   = yes
+#OPTIMIZE   = yes
+OPTIMIZE   = no
 #
 #----------------------------------------------------------------------------
 #
@@ -83,11 +84,11 @@ endif
 #
 #----------------------------------------------------------------------------
 
-TARGETX = scrip_regrid
+TARGETX = convert_grid-descript
 
 ifeq ($(OPTIMIZE),no)
   #  If building a debug version, append "_db" to the executable name
-  TARGETX = scrip_regrid_db
+  TARGETX = convert_grid-descript_db
 endif
 
 #----------------------------------------------------------------------------
@@ -144,8 +145,8 @@ dirs:
 
 clean:
 ifeq ($(VARSDEFINED),SCRIPEXEDIRSCRIPDIRSCRIPARCH)
-	@cd $(SCRIPEXEDIR) && $(RM) core scrip scrip_db 
-	@cd $(SCRIPEXEDIR)/regrid && $(RM) scrip_regrid scrip_regrid_db 
+	@cd $(SCRIPEXEDIR) && $(RM) core scrip scrip_db
+	@cd $(SCRIPEXEDIR)/convert_grid-descript && $(RM) convert_grid-descript convert_grid-descript_db
 	@cd $(SCRIPEXEDIR) && $(RM) compile/Depends/*.* 
 	@cd $(SCRIPEXEDIR) && $(RM) compile/*.f compile/*.f90 compile/*.c
 	@cd $(SCRIPEXEDIR) && $(RM) compile/*.o compile/*.$(MODSUF) 

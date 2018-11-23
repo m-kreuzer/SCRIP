@@ -125,7 +125,7 @@
    SCRIP_errorMsgCount = SCRIP_errorMsgCount + 1
 
    if (SCRIP_errorMsgCount <= SCRIP_errorLogDepth) then
-      write(logErrorMsg,'(a,a2,a)') rtnName,': ',errorMsg
+      write(logErrorMsg,'(a,a2,a)') trim(rtnName),': ',trim(errorMsg)
       SCRIP_errorLog(SCRIP_errorMsgCount) = logErrorMsg
    endif
 

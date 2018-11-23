@@ -1,0 +1,11 @@
+&convertInputs
+
+    ! this is a example namelist for regridding with SCRIP
+
+    input_file = '/path/in.nc'
+    field_name_in = 'var1'
+    field_name_out = 'var1'
+    interp_file = 'path/weights.nc'
+    output_file = 'path/out.nc'
+
+/

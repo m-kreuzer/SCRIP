@@ -145,6 +145,7 @@ dirs:
 clean:
 ifeq ($(VARSDEFINED),SCRIPEXEDIRSCRIPDIRSCRIPARCH)
 	@cd $(SCRIPEXEDIR) && $(RM) core scrip scrip_db 
+	@cd $(SCRIPEXEDIR)/regrid && $(RM) scrip_regrid scrip_regrid_db 
 	@cd $(SCRIPEXEDIR) && $(RM) compile/Depends/*.* 
 	@cd $(SCRIPEXEDIR) && $(RM) compile/*.f compile/*.f90 compile/*.c
 	@cd $(SCRIPEXEDIR) && $(RM) compile/*.o compile/*.$(MODSUF) 
