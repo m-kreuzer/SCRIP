@@ -138,12 +138,12 @@
           grid2_err, &
           grid2_tmp
 
-      ! temporary arrays for saving data to ncfiles (real & integer)
-      real (SCRIP_i4), dimension(:,:), allocatable ::  &
-          grid1itmp2d, grid2itmp2d
+      !! temporary arrays for saving data to ncfiles (real & integer)
+      !real (SCRIP_i4), dimension(:,:), allocatable ::  &
+      !    grid1itmp2d, grid2itmp2d
 
-      real (SCRIP_r8), dimension(:,:), allocatable ::  &
-          grid1tmp2d, grid2tmp2d
+      !real (SCRIP_r8), dimension(:,:), allocatable ::  &
+      !    grid1tmp2d, grid2tmp2d
 
       ! used for uniform output format
       character (10) :: format_str 
@@ -260,11 +260,11 @@
       !elsewhere
       !  grid1_imask = 0
       !endwhere
-      !where (grid2_mask)
-      !  grid2_imask = 1
-      !elsewhere
-      !  grid2_imask = 0
-      !endwhere
+      where (grid2_mask)
+        grid2_imask = 1
+      elsewhere
+        grid2_imask = 0
+      endwhere
 
 !-----------------------------------------------------------------------
 !
@@ -341,13 +341,13 @@
                             NF90_DOUBLE, nc_grid2size_id, &
                             nc_dstgrdcntrlat_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-          'error defining dst grid center lat'))  &
+          'error defining grid center lat'))  &
           call SCRIP_ConvertExit(errorCode)
 
       ncstat = nf90_put_att(nc_outfile_id, nc_dstgrdcntrlat_id,  &
                             'units', 'radians')  
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                    'error adding units dst grid center lon'))  &
+                    'error adding units grid center lon'))  &
           call SCRIP_ConvertExit(errorCode)
 
       !***
@@ -372,13 +372,13 @@
                             NF90_DOUBLE, nc_grid2size_id,  &
                             nc_dstgrdcntrlon_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                        'error defining dst grid center lon'))  &
+                        'error defining grid center lon'))  &
           call SCRIP_ConvertExit(errorCode)
 
       ncstat = nf90_put_att(nc_outfile_id, nc_dstgrdcntrlon_id, &
                             'units', 'radians')
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                    'error adding units dst grid center lon'))  &
+                    'error adding units grid center lon'))  &
           call SCRIP_ConvertExit(errorCode)
 
       !***
@@ -485,7 +485,7 @@
                             NF90_DOUBLE, nc_grid2size_id,   &
                             nc_dstarray1_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
-                       'error defining 1st order dst field'))  &
+                       'error defining output field'))  &
           call SCRIP_ConvertExit(errorCode)
 
       !ncstat = nf90_def_var(nc_outfile_id, 'dst_array1a',  &
@@ -546,8 +546,8 @@
       !*** write grid center latitude array
       !***
 
-      allocate(grid1tmp2d(grid1_dims(1),grid1_dims(2)), &
-               grid2tmp2d(grid2_dims(1),grid2_dims(2)))
+      !allocate(grid1tmp2d(grid1_dims(1),grid1_dims(2)), &
+      !         grid2tmp2d(grid2_dims(1),grid2_dims(2)))
       !n = 0
       !do j=1,grid1_dims(2)
       !do i=1,grid1_dims(1)
@@ -561,15 +561,18 @@
       !                 'error writing src grid center lat'))  &
       !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2tmp2d(i,j) = grid2_center_lat(n)
-      end do
-      end do
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2tmp2d(i,j) = grid2_center_lat(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdcntrlat_id, &
+      !                      grid2tmp2d)
+      !!! write one dimensional center latitude array
       ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdcntrlat_id, &
-                            grid2tmp2d)
+                            grid2_center_lat)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                        'error writing dst grid center lat'))  &
           call SCRIP_ConvertExit(errorCode)
@@ -591,15 +594,18 @@
       !                      'error writing src grid lon'))  &
       !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2tmp2d(i,j) = grid2_center_lon(n)
-      end do
-      end do
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2tmp2d(i,j) = grid2_center_lon(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdcntrlon_id, &
+      !                      grid2tmp2d)
+      !!! write one dimensional center latitude array
       ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdcntrlon_id, &
-                            grid2tmp2d)
+                            grid2_center_lon)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error writing dst grid lon'))  &
           call SCRIP_ConvertExit(errorCode)
@@ -608,8 +614,8 @@
       !*** write grid mask
       !***
       
-      allocate(grid1itmp2d(grid1_dims(1),grid1_dims(2)), &
-               grid2itmp2d(grid2_dims(1),grid2_dims(2)))
+      !allocate(grid1itmp2d(grid1_dims(1),grid1_dims(2)), &
+      !         grid2itmp2d(grid2_dims(1),grid2_dims(2)))
       !n = 0
       !do j=1,grid1_dims(2)
       !do i=1,grid1_dims(1)
@@ -623,15 +629,18 @@
       !                      'error writing src grid mask'))  &
       !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         grid2itmp2d(i,j) = grid2_imask(n)
-      end do
-      end do
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   grid2itmp2d(i,j) = grid2_imask(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdimask_id, &
+      !                      grid2itmp2d)
+      !!! write one dimensional grid mask 
       ncstat = nf90_put_var(nc_outfile_id, nc_dstgrdimask_id, &
-                            grid2itmp2d)
+                            grid2_imask)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                             'error writing dst grid mask'))  &
           call SCRIP_ConvertExit(errorCode)
@@ -717,7 +726,7 @@
 
       ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,       &
                         grid2_array, start = (/1, 1, 1, 1/),        &
-                        count = (/grid1_dims(1), grid1_dims(2), 1, 1/) )
+                        count = (/grid2_dims(1), grid2_dims(2), 1, 1/) )
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
                                  'error reading field_name_in'))    &
           call SCRIP_ConvertExit(errorCode)
@@ -1086,17 +1095,20 @@
       !                           'error writing src field'))  &
       !    call SCRIP_ConvertExit(errorCode)
 
-      n = 0
-      do j=1,grid2_dims(2)
-      do i=1,grid2_dims(1)
-         n = n+1
-         !grid2tmp2d(i,j) = grid2_tmp(n)
-         !grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n)
-         grid2tmp2d(i,j) = grid2_array(n)
-      end do
-      end do
+      !n = 0
+      !do j=1,grid2_dims(2)
+      !do i=1,grid2_dims(1)
+      !   n = n+1
+      !   !grid2tmp2d(i,j) = grid2_tmp(n)
+      !   !grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n)
+      !   grid2tmp2d(i,j) = grid2_array(n)
+      !end do
+      !end do
+      !ncstat = nf90_put_var(nc_outfile_id, nc_dstarray1_id, &
+      !                      grid2tmp2d  )
+      !!! write one dimensional grid2 array 
       ncstat = nf90_put_var(nc_outfile_id, nc_dstarray1_id, &
-                            grid2tmp2d  )
+                            grid2_array  )
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
                             'error writing remapped field'))  &
           call SCRIP_ConvertExit(errorCode)

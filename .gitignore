@@ -12,6 +12,8 @@ scrip_test_repeat
 scrip_test_repeat_db
 scrip_regrid
 scrip_regrid_db
+convert_grid-descript
+convert_grid-descript_db
 
 # netcdf files
 *.nc
