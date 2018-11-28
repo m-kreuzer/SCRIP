@@ -3,7 +3,11 @@
 !     this program is a short driver to read a variable from a netCDF
 !     file with CF format and store it in a netCDF file with SCRIP format
 !       -> needs interpolation weights file which stores grid
-!       information in SCRIP format
+!          information in SCRIP format
+!       -> grid of variable to read must correspond to destination(!)
+!          grid of interpolation file
+!       -> namelist to specify input/output/interp. file & field names:
+!           convert_grid-descript_in
 !       
 !
 !       based on:
@@ -117,7 +121,9 @@
       integer (SCRIP_i4) :: i,j,n,imin,imax,idiff,  &
           ip1,im1,jp1,jm1,nx,ny,  &  ! for computing bicub gradients
           in,is,ie,iw,ine,inw,ise,isw,  &
-          iunit                  ! unit number for input configuration file
+          iunit, &               ! unit number for input configuration file
+          unit_attr_len          ! length of string which holds unit attribute
+                                 ! (to be allocated)
 
       integer (SCRIP_i4), dimension(:), allocatable ::  &
           grid1_imask, grid2_imask, grid2_count
@@ -147,6 +153,9 @@
 
       ! used for uniform output format
       character (10) :: format_str 
+
+      character(2000) :: title 
+      character(len=:), allocatable :: unit_attr
 
       character (12) ::   &
           rtnName = 'convert_grid-descript'
@@ -268,6 +277,45 @@
 
 !-----------------------------------------------------------------------
 !
+!    reading field_name_in variable from input_file 
+!       -> storing in grid2_array
+!
+!-----------------------------------------------------------------------
+
+      ncstat = nf90_open(input_file, NF90_NOWRITE, nc_inputfile_id) 
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error opening input_file'))       &
+          call SCRIP_ConvertExit(errorCode)
+
+      ncstat = nf90_inq_varid(nc_inputfile_id, field_name_in,       &
+                                nc_fieldname_id)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                'error getting field_name_in id'))  &
+          call SCRIP_ConvertExit(errorCode)
+
+      ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,       &
+                        grid2_array, start = (/1, 1, 1, 1/),        &
+                        count = (/grid2_dims(1), grid2_dims(2), 1, 1/) )
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error reading field_name_in'))    &
+          call SCRIP_ConvertExit(errorCode)
+
+      ncstat = nf90_inquire_attribute(nc_inputfile_id,              &
+                        nc_fieldname_id, "units", len=unit_attr_len)
+                      
+      allocate( character( len=unit_attr_len ) :: unit_attr) 
+
+      ncstat = nf90_get_att(nc_inputfile_id, nc_fieldname_id,      &
+                                "units", unit_attr)
+      
+
+      ncstat = nf90_close(nc_inputfile_id)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
+                                 'error closing input_file'))       &
+          call SCRIP_ConvertExit(errorCode)
+
+!-----------------------------------------------------------------------
+!
 !     setup a NetCDF file for output
 !
 !-----------------------------------------------------------------------
@@ -280,10 +328,17 @@
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,  &
           'error opening output file')) call SCRIP_ConvertExit(errorCode)
 
+      WRITE(title,*) 'variable >>', trim(field_name_in),               &
+                 '<< from file ', trim(input_file),                    &
+                 ' (CF format) defined on destination-grid of & 
+                    &weighting file ',                                 &
+                 trim(interp_file), ' with name: >>', trim(map_name),  &
+                 '<< saved in variable >>',            &
+                 trim(field_name_out), '<< (SCRIP format)'
 
       ncstat = nf90_put_att(nc_outfile_id, NF90_GLOBAL, 'title',     &
                             !map_name)
-                            'convert')
+                            title) 
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,         &
                                  'error writing output file title')) &
           call SCRIP_ConvertExit(errorCode)
@@ -486,6 +541,13 @@
                             nc_dstarray1_id)
       if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
                        'error defining output field'))  &
+          call SCRIP_ConvertExit(errorCode)
+
+
+      ncstat = nf90_put_att(nc_outfile_id, nc_dstarray1_id, &
+                            'units', unit_attr)
+      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName, &
+                            'error adding units to dst mask'))  &
           call SCRIP_ConvertExit(errorCode)
 
       !ncstat = nf90_def_var(nc_outfile_id, 'dst_array1a',  &
@@ -705,36 +767,6 @@
       !                      'error writing dst grid frac'))  &
       !    call SCRIP_ConvertExit(errorCode)
 
-
-!-----------------------------------------------------------------------
-!
-!    reading field_name_in variable from input_file 
-!       -> storing in grid2_array
-!
-!-----------------------------------------------------------------------
-
-      ncstat = nf90_open(input_file, NF90_NOWRITE, nc_inputfile_id) 
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
-                                 'error opening input_file'))       &
-          call SCRIP_ConvertExit(errorCode)
-
-      ncstat = nf90_inq_varid(nc_inputfile_id, field_name_in,       &
-                                nc_fieldname_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
-                                'error getting field_name_in id'))  &
-          call SCRIP_ConvertExit(errorCode)
-
-      ncstat = nf90_get_var(nc_inputfile_id, nc_fieldname_id,       &
-                        grid2_array, start = (/1, 1, 1, 1/),        &
-                        count = (/grid2_dims(1), grid2_dims(2), 1, 1/) )
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
-                                 'error reading field_name_in'))    &
-          call SCRIP_ConvertExit(errorCode)
-
-      ncstat = nf90_close(nc_inputfile_id)
-      if (SCRIP_NetcdfErrorCheck(ncstat, errorCode, rtnName,        &
-                                 'error closing input_file'))       &
-          call SCRIP_ConvertExit(errorCode)
 
 
 

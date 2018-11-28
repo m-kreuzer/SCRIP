@@ -1,10 +1,27 @@
 &convertInputs
 
+    !input_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/data_input/PICO-ex_thinned.nc'
+    !field_name_in = 'cell_area'
+    !field_name_out = 'grid_area'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.MOM_to_PISM.conserv.scrip.nc'
+    !output_file = 'convert_test.nc'
+
     input_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/data_input/PICO-ex_thinned.nc'
     field_name_in = 'cell_area'
     field_name_out = 'grid_area'
-    interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.MOM_to_PISM.conserv.scrip.nc'
-    !interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.PISM_to_MOM.conserv.scrip.nc'
-    output_file = 'convert_test.nc'
+    interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.MOM_to_PISMnm.w-corner.conserv.scrip.nc'
+    output_file = 'PISM.cell_area.scrip.nc'
+
+    !input_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/data_input/mom_example_data_all-geo-var.nc'
+    !field_name_in = 'area_t'
+    !field_name_out = 'grid_area'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.PISMnm_to_MOM.w-corner.conserv.scrip.nc'
+    !output_file = 'MOM.cell_area.scrip.nc'
+
+    !input_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/data_input/land_month.nc'
+    !field_name_in = 'area'
+    !field_name_out = 'grid_area'
+    !interp_file = '/p/projects/climber3/kreuzer/POEM/MOM5_PISM_coupling/regridding_standalone/interp_weights/weights.PISMnm_to_LANDnm.w-corner.conserv.scrip.nc'
+    !output_file = 'LAND.cell_area.scrip.nc'
 
 /
