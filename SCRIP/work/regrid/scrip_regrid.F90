@@ -1080,8 +1080,8 @@
       do j=1,grid2_dims(2)
       do i=1,grid2_dims(1)
          n = n+1
-         grid2tmp2d(i,j) = grid2_tmp(n)
-         !grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n) ! -> cdo weights
+         !grid2tmp2d(i,j) = grid2_tmp(n)
+         grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n) ! -> cdo weights
       end do
       end do
       ncstat = nf90_put_var(nc_outfile_id, nc_dstarray1_id, &
