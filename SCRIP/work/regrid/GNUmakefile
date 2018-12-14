@@ -32,6 +32,7 @@ SHELL = /bin/sh
 #  By default, you build optimized code.  To override, add "OPTIMIZE=no" 
 #  to the make command line.
 OPTIMIZE   = yes
+#OPTIMIZE   = no
 #
 #----------------------------------------------------------------------------
 #
@@ -87,7 +88,7 @@ TARGETX = scrip_regrid
 
 ifeq ($(OPTIMIZE),no)
   #  If building a debug version, append "_db" to the executable name
-  TARGET = scrip_regrid_db
+  TARGETX = scrip_regrid_db
 endif
 
 #----------------------------------------------------------------------------

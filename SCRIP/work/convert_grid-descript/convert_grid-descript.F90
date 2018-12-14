@@ -306,6 +306,14 @@
 !
 !-----------------------------------------------------------------------
 
+      !!! MOM & LAND radius are defined in:
+      !     mom5.0.2/src/shared/mosaic/constant.h
+      !!! PISM radius calculated by:
+      !     PISM_WGS84_radius.py
+
+        ! to do: omit missing values in land mask (-999) from conversion
+
+
       if( INDEX(output_file, "MOM") ) then
           if( unit_attr .EQ. "m^2") then
               grid2_array = grid2_array / (6371 * 1e3)**2  

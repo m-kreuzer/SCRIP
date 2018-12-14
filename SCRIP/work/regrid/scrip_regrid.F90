@@ -142,7 +142,7 @@
           grid1tmp2d, grid2tmp2d
 
       ! used for uniform output format
-      character (10) :: format_str 
+      character (20) :: format_str 
 
       character (12) ::   &
           rtnName = 'scrip_regrid'
@@ -997,6 +997,10 @@
 !
 !-----------------------------------------------------------------------
 
+        !!! FLUX NORMALIZATION
+        ! convert grid1 variable from quantity to quantity per area
+        !grid1_array = grid1_array/grid1_area
+
       grad1_lat_zero = zero
       grad1_lon_zero = zero
      
@@ -1042,6 +1046,11 @@
 
       !END DO   ! temporary change for time measurements
 
+        !!! FLUX NORMALIZATION
+        ! convert grid2 variable from  quantity per area to quantity
+        !grid1_array = grid1_array*grid1_area
+        !grid2_tmp = grid2_tmp*grid2_area
+
       print *,'First order mapping from grid1 to grid2:'
       print *,'----------------------------------------'
       print *,'Grid1 min,max: ',minval(grid1_array),maxval(grid1_array)
@@ -1057,6 +1066,21 @@
       print *,'Grid1 Integral = ',sum(grid1_array*grid1_area*grid1_frac)
       print *,'Grid2 Integral = ',sum(grid2_tmp  *grid2_area*grid2_frac)
 
+      format_str = "(A25,F40.20)"
+      print *,''
+      print *,'     --- debug start ---'
+      write(*,format_str) 'sum(grid1 array) =    ',sum(grid1_array)
+      write(*,format_str) 'sum(grid1 area) =     ',sum(grid1_area)
+      write(*,format_str) 'sum(grid1 area*frac)= ', &
+          sum(grid1_area*grid1_frac)
+      write(*,format_str) 'sum(grid1 frac) =     ',sum(grid1_frac)
+      print *,''     
+      write(*,format_str) 'sum(grid2 array) =    ',sum(grid2_tmp*grid2_frac)
+      write(*,format_str) 'sum(grid2 area) =     ',sum(grid2_area)
+      write(*,format_str) 'sum(grid2 area*frac)= ', &
+          sum(grid2_area*grid2_frac)
+      write(*,format_str) 'sum(grid2 frac) =     ',sum(grid2_frac)
+      print *,'     --- debug end  ---'
 !-----------------------------------------------------------------------
 !
 !     write results to NetCDF file
@@ -1080,8 +1104,8 @@
       do j=1,grid2_dims(2)
       do i=1,grid2_dims(1)
          n = n+1
-         !grid2tmp2d(i,j) = grid2_tmp(n)
-         grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n) ! -> cdo weights
+         grid2tmp2d(i,j) = grid2_tmp(n)
+         !grid2tmp2d(i,j) = grid2_tmp(n) * grid2_frac(n) ! -> cdo weights
       end do
       end do
       ncstat = nf90_put_var(nc_outfile_id, nc_dstarray1_id, &
