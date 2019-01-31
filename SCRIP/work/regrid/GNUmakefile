@@ -31,8 +31,8 @@ SHELL = /bin/sh
 #
 #  By default, you build optimized code.  To override, add "OPTIMIZE=no" 
 #  to the make command line.
-OPTIMIZE   = yes
-#OPTIMIZE   = no
+#OPTIMIZE   = yes
+OPTIMIZE   = no
 #
 #----------------------------------------------------------------------------
 #
